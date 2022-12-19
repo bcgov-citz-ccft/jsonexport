@@ -1,6 +1,6 @@
 {
-  "name": "jsonexport",
-  "version": "3.2.0",
+  "name": "@bc_gov_forminators/json_to_csv_export",
+  "version": "1.0.0",
   "description": "Makes easy to convert JSON to CSV",
   "main": "./lib",
   "scripts": {

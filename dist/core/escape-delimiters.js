@@ -20,7 +20,7 @@ module.exports = function escapedDelimiters(textDelimiter, rowDelimiter, forceTe
     throw new TypeError('Invalid param "rowDelimiter", must be a string.');
   }
 
-  var textDelimiterRegex = new RegExp("\\" + textDelimiter, 'g');
+  var textDelimiterRegex = new RegExp('\\' + textDelimiter, 'g');
   var escapedDelimiter = textDelimiter + textDelimiter;
 
   var enclosingCondition = textDelimiter === '"' ? function (value) {
@@ -30,7 +30,7 @@ module.exports = function escapedDelimiters(textDelimiter, rowDelimiter, forceTe
   };
 
   return function (value) {
-    if (forceTextDelimiter) value = "" + value;
+    if (forceTextDelimiter) value = '' + value;
 
     if (!value.replace) return value;
     // Escape the textDelimiters contained in the field

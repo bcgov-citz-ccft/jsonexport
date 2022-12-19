@@ -28,11 +28,12 @@ var Handler = function () {
 
   _createClass(Handler, [{
     key: '_setHeaders',
-    value: function _setHeaders(result, item) {
+    value: function _setHeaders(result, item, parent) {
       var self = this;
       if (!item) return result;
       return result.map(function (element) {
         element.item = element.item ? item + self._options.headerPathString + element.item : item;
+        element.parent = parent;
         return element;
       });
     }
@@ -63,7 +64,7 @@ var Handler = function () {
       //Check if element is an Array
       else if (helper.isArray(element)) {
           var resultArray = this._handleArray(element, item);
-          return this._setHeaders(resultArray, item);
+          return this._setHeaders(resultArray, item, item);
         }
         //Check if element is a Object
         else if (helper.isObject(element)) {
@@ -228,7 +229,7 @@ var Handler = function () {
 
 module.exports = Handler;
 
-var globalScope = typeof window === "undefined" ? global : window;
+var globalScope = typeof window === 'undefined' ? global : window;
 function isInstanceOfTypeName(element, typeName) {
   if (element instanceof globalScope[typeName]) {
     return true; //Buffer and complex objects
@@ -237,11 +238,11 @@ function isInstanceOfTypeName(element, typeName) {
   //literals in javascript cannot be checked by instance of
   switch (typeof element === 'undefined' ? 'undefined' : _typeof(element)) {
     case 'string':
-      return typeName === "String";
+      return typeName === 'String';
     case 'boolean':
-      return typeName === "Boolean";
+      return typeName === 'Boolean';
     case 'number':
-      return typeName === "Number";
+      return typeName === 'Number';
   }
 
   return false;

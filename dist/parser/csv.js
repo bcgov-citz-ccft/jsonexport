@@ -7,6 +7,8 @@
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var joinRows = require('../core/join-rows');
@@ -57,7 +59,7 @@ var Parser = function () {
           var row = _step.value;
 
           var missing = this._headers.length - row.length;
-          if (missing > 0) row = row.concat(Array(missing).join(".").split("."));
+          if (missing > 0) row = row.concat(Array(missing).join('.').split('.'));
           if (lastRow && this._options.fillGaps) row = row.map(fillGaps);
           finalRows.push(row.join(this._options.rowDelimiter));
           lastRow = row;
@@ -85,7 +87,6 @@ var Parser = function () {
       var self = this;
       this._headers = this._headers || [];
       var fileRows = [];
-      var outputFile = void 0;
       var fillRows = void 0;
 
       var getHeaderIndex = function getHeaderIndex(header) {
@@ -107,61 +108,150 @@ var Parser = function () {
         };
         // initialize the array with empty strings to handle 'unpopular' headers
         var newRow = function newRow() {
-          return new Array(self._headers.length).fill(null);
+          return new Array(self._headers.length).fill('');
         };
-        var emptyRowIndexByHeader = {};
-        var currentRow = newRow();
-        var _iteratorNormalCompletion2 = true;
-        var _didIteratorError2 = false;
-        var _iteratorError2 = undefined;
+        //check if the all values in an array are null
+        var allNullArrayValues = function allNullArrayValues(arr) {
+          return arr.every(function (element) {
+            return element === '';
+          });
+        };
 
-        try {
-          for (var _iterator2 = result[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-            var element = _step2.value;
+        var groupArray = self._getArraysList(result);
 
-            var elementHeaderIndex = getHeaderIndex(element.item);
-            if (currentRow[elementHeaderIndex] != undefined) {
-              fillAndPush(currentRow);
-              currentRow = newRow();
-            }
-            emptyRowIndexByHeader[elementHeaderIndex] = emptyRowIndexByHeader[elementHeaderIndex] || 0;
-            // make sure there isn't a empty row for this header
-            if (self._options.fillTopRow && emptyRowIndexByHeader[elementHeaderIndex] < rows.length) {
-              rows[emptyRowIndexByHeader[elementHeaderIndex]][elementHeaderIndex] = self._escape(element.value);
-              emptyRowIndexByHeader[elementHeaderIndex] += 1;
-              continue;
-            }
-            currentRow[elementHeaderIndex] = self._escape(element.value);
-            emptyRowIndexByHeader[elementHeaderIndex] += 1;
-          }
-          // push last row
-        } catch (err) {
-          _didIteratorError2 = true;
-          _iteratorError2 = err;
-        } finally {
+        if (groupArray.size === 1) {
+
+          var emptyRowIndexByHeader = {};
+          var currentRow = newRow();
+          var _iteratorNormalCompletion2 = true;
+          var _didIteratorError2 = false;
+          var _iteratorError2 = undefined;
+
           try {
-            if (!_iteratorNormalCompletion2 && _iterator2.return) {
-              _iterator2.return();
+            for (var _iterator2 = result[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+              var element = _step2.value;
+
+              var elementHeaderIndex = getHeaderIndex(element.item);
+              if (currentRow[elementHeaderIndex] !== '') {
+                fillAndPush(currentRow);
+                currentRow = newRow();
+              }
+              emptyRowIndexByHeader[elementHeaderIndex] = emptyRowIndexByHeader[elementHeaderIndex] || 0;
+              // make sure there isn't a empty row for this header
+              if (self._options.fillTopRow && emptyRowIndexByHeader[elementHeaderIndex] < rows.length) {
+                var max = Math.max.apply(Math, _toConsumableArray(Object.values(emptyRowIndexByHeader)));
+                if (rows.length < max) {
+                  fillAndPush(currentRow);
+                  currentRow = newRow();
+                }
+
+                self._fillEachRowGap(elementHeaderIndex, self._escape(element.value), rows);
+                emptyRowIndexByHeader[elementHeaderIndex] += 1;
+                continue;
+              }
+              currentRow[elementHeaderIndex] = self._escape(element.value);
+              emptyRowIndexByHeader[elementHeaderIndex] += 1;
             }
+            // push last row
+          } catch (err) {
+            _didIteratorError2 = true;
+            _iteratorError2 = err;
           } finally {
-            if (_didIteratorError2) {
-              throw _iteratorError2;
+            try {
+              if (!_iteratorNormalCompletion2 && _iterator2.return) {
+                _iterator2.return();
+              }
+            } finally {
+              if (_didIteratorError2) {
+                throw _iteratorError2;
+              }
             }
           }
-        }
 
-        if (currentRow.length > 0) {
-          fillAndPush(currentRow);
+          if (!allNullArrayValues(currentRow)) {
+            fillAndPush(currentRow);
+          }
+          fileRows = fileRows.concat(self._checkRows(rows));
+        } else {
+          var _currentRow = newRow();
+          var objectRow = newRow();
+          var arrayRow = [];
+          var _iteratorNormalCompletion3 = true;
+          var _didIteratorError3 = false;
+          var _iteratorError3 = undefined;
+
+          try {
+            for (var _iterator3 = result[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+              var _element = _step3.value;
+
+              var _elementHeaderIndex = getHeaderIndex(_element.item);
+              if (_currentRow[_elementHeaderIndex] != '' && _currentRow[_elementHeaderIndex] != undefined) {
+                arrayRow.push(_currentRow);
+                _currentRow = newRow();
+                _currentRow[_elementHeaderIndex] = _element.value;
+              } else {
+                if (!_element.parent) {
+                  objectRow[_elementHeaderIndex] = _element.value;
+                } else {
+                  if (!groupArray.get(_element.parent)) {
+                    if (!allNullArrayValues(_currentRow)) {
+                      arrayRow.push(_currentRow);
+                      _currentRow = newRow();
+                    }
+                    groupArray.set(_element.parent, true);
+                  }
+                  _currentRow[_elementHeaderIndex] = _element.value;
+                }
+              }
+            }
+
+            // push last row
+          } catch (err) {
+            _didIteratorError3 = true;
+            _iteratorError3 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                _iterator3.return();
+              }
+            } finally {
+              if (_didIteratorError3) {
+                throw _iteratorError3;
+              }
+            }
+          }
+
+          if (!allNullArrayValues(_currentRow)) {
+            arrayRow.push(_currentRow);
+          }
+
+          var filledrows = arrayRow.map(function (row) {
+            var missing = self._headers.length - row.length;
+            row = row.concat(Array(missing).fill(''));
+            return row;
+          });
+
+          for (var i in objectRow) {
+            for (var j in filledrows) {
+              if (objectRow[i] !== '') {
+
+                filledrows[j][i] = objectRow[i];
+              }
+            }
+          }
+          fileRows = fileRows.concat(filledrows.map(function (row) {
+            return row.join();
+          }));
         }
-        fileRows = fileRows.concat(self._checkRows(rows));
       };
-      var _iteratorNormalCompletion3 = true;
-      var _didIteratorError3 = false;
-      var _iteratorError3 = undefined;
+      var _iteratorNormalCompletion4 = true;
+      var _didIteratorError4 = false;
+      var _iteratorError4 = undefined;
 
       try {
-        for (var _iterator3 = json[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-          var item = _step3.value;
+        for (var _iterator4 = json[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+          var item = _step4.value;
+
 
           //Call checkType to list all items inside this object
           //Items are returned as a object {item: 'Prop Value, Item Name', value: 'Prop Data Value'}
@@ -169,16 +259,16 @@ var Parser = function () {
           fillRows(itemResult);
         }
       } catch (err) {
-        _didIteratorError3 = true;
-        _iteratorError3 = err;
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion3 && _iterator3.return) {
-            _iterator3.return();
+          if (!_iteratorNormalCompletion4 && _iterator4.return) {
+            _iterator4.return();
           }
         } finally {
-          if (_didIteratorError3) {
-            throw _iteratorError3;
+          if (_didIteratorError4) {
+            throw _iteratorError4;
           }
         }
       }
@@ -191,12 +281,51 @@ var Parser = function () {
       return joinRows(fileRows, self._options.endOfLine);
     }
   }, {
+    key: '_fillEachRowGap',
+    value: function _fillEachRowGap(elementHeaderIndex, elementValue, row) {
+      for (var index in row) {
+        if (row[index][elementHeaderIndex] === '') {
+          row[index][elementHeaderIndex] = elementValue;
+        }
+      }
+    }
+  }, {
+    key: '_getArraysList',
+    value: function _getArraysList(result) {
+      var map = new Map();
+      var _iteratorNormalCompletion5 = true;
+      var _didIteratorError5 = false;
+      var _iteratorError5 = undefined;
+
+      try {
+        for (var _iterator5 = result[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+          var val = _step5.value;
+
+          if (val.parent) map.set(val.parent, false);
+        }
+      } catch (err) {
+        _didIteratorError5 = true;
+        _iteratorError5 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion5 && _iterator5.return) {
+            _iterator5.return();
+          }
+        } finally {
+          if (_didIteratorError5) {
+            throw _iteratorError5;
+          }
+        }
+      }
+
+      return map;
+    }
+  }, {
     key: '_parseObject',
     value: function _parseObject(json) {
       var self = this;
       var fileRows = [];
       var parseResult = [];
-      var outputFile = void 0;
       var fillRows = void 0;
       var horizontalRows = [[], []];
 
@@ -214,7 +343,7 @@ var Parser = function () {
         }
       };
       for (var prop in json) {
-        var prefix = "";
+        var prefix = '';
         if (this._options.mainPathItem) prefix = this._options.mainPathItem + this._options.headerPathString;
         parseResult = this._handler.check(json[prop], prefix + prop, prop, json);
 
